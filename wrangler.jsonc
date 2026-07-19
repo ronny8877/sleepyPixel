@@ -10,5 +10,9 @@
 	},
 	"observability": {
 		"enabled": true
+	},
+	"vars": {
+		"SUPABASE_URL": "https://alnfwznmmtcerwqhczdi.supabase.co",
+		"SITE_URL": "https://sleepypixel.dev"
 	}
 }

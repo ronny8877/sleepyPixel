@@ -9,6 +9,7 @@
 	const onSpendwise = $derived(page.url.pathname.includes('/spendwise'));
 	const onPrivacy = $derived(page.url.pathname.includes('/privacy'));
 	const onTerms = $derived(page.url.pathname.includes('/terms'));
+	const onOverview = $derived(/\/spendwise\/?$/.test(page.url.pathname));
 </script>
 
 <header class="site-header">
@@ -25,8 +26,8 @@
 					class="flex min-w-0 items-center gap-2 truncate"
 					class:font-display={variant !== 'legal'}
 					class:font-semibold={variant !== 'legal'}
-					class:text-ink={!onPrivacy && !onTerms}
-					class:text-muted={onPrivacy || onTerms}
+					class:text-ink={onOverview}
+					class:text-muted={!onOverview}
 				>
 					{#if variant !== 'legal'}
 						<AppIcon size="sm" class="hidden sm:block" />
@@ -43,8 +44,8 @@
 				<a
 					href={resolve('/spendwise')}
 					class="nav-link"
-					class:nav-link-active={!onPrivacy && !onTerms}
-					aria-current={!onPrivacy && !onTerms ? 'page' : undefined}
+					class:nav-link-active={onOverview}
+					aria-current={onOverview ? 'page' : undefined}
 				>
 					Overview
 				</a>
