@@ -1,0 +1,238 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+@theme {
+	--font-display: 'Sora', ui-sans-serif, sans-serif;
+	--font-sans: 'IBM Plex Sans', ui-sans-serif, sans-serif;
+
+	--color-canvas: #f5f5f7;
+	--color-surface: #ffffff;
+	--color-ink: #1d1d1f;
+	--color-muted: #6e6e73;
+	--color-line: #d2d2d7;
+	--color-soft: #e8e8ed;
+	--color-accent: #0071e3;
+	--color-spend: #0b6e4f;
+}
+
+@layer base {
+	html {
+		scroll-behavior: smooth;
+	}
+
+	body {
+		@apply bg-canvas font-sans text-[15px] leading-relaxed text-ink antialiased;
+	}
+
+	::selection {
+		background: color-mix(in srgb, var(--color-accent) 18%, white);
+	}
+}
+
+@layer components {
+	.shell {
+		@apply mx-auto w-full max-w-5xl px-6 sm:px-8;
+	}
+
+	.shell-narrow {
+		@apply mx-auto w-full max-w-3xl px-6 sm:px-8;
+	}
+
+	.site-header {
+		@apply sticky top-0 z-30 border-b border-line/70 bg-canvas/85 backdrop-blur-xl;
+	}
+
+	.site-footer {
+		@apply mt-auto border-t border-line bg-surface/50;
+	}
+
+	.section {
+		@apply py-14 sm:py-16;
+	}
+
+	.section-bordered {
+		@apply border-t border-line;
+	}
+
+	.section-heading-center {
+		@apply text-center;
+	}
+
+	.eyebrow {
+		@apply mb-3 text-xs font-semibold tracking-[0.14em] text-muted uppercase;
+	}
+
+	.heading-hero {
+		@apply font-display text-[clamp(2.75rem,10vw,5.5rem)] leading-[0.98] font-extrabold tracking-[-0.03em] text-ink;
+	}
+
+	.heading-page {
+		@apply font-display text-[clamp(2.25rem,7vw,3.75rem)] leading-[1.02] font-extrabold tracking-[-0.03em] text-ink;
+	}
+
+	.heading-section {
+		@apply font-display text-2xl font-semibold tracking-[-0.02em] text-ink sm:text-[1.75rem];
+	}
+
+	.text-lead {
+		@apply text-lg leading-relaxed text-muted sm:text-[1.125rem];
+	}
+
+	.text-body {
+		@apply text-[15px] leading-relaxed text-muted;
+	}
+
+	.badge {
+		@apply inline-flex items-center rounded-full bg-soft px-3 py-1 text-xs font-medium text-muted;
+	}
+
+	.card {
+		@apply rounded-[1.35rem] border border-line bg-surface p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] sm:p-7;
+	}
+
+	.card-link {
+		@apply block w-full no-underline text-inherit;
+	}
+
+	.card-interactive {
+		@apply transition duration-300 hover:-translate-y-0.5 hover:border-ink/10 hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)];
+	}
+
+	.hero-home {
+		@apply flex flex-col justify-center py-20 sm:py-28;
+	}
+
+	.apps-section {
+		@apply border-t border-line pb-20 pt-14 sm:pb-28 sm:pt-16;
+	}
+
+	.app-card {
+		@apply flex w-full items-start gap-5 rounded-[1.35rem] border border-line bg-surface p-5 no-underline text-inherit shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition duration-300 sm:items-center sm:gap-6 sm:p-6;
+		@apply hover:-translate-y-0.5 hover:border-ink/10 hover:shadow-[0_12px_40px_rgba(0,0,0,0.07)];
+	}
+
+	.app-card-icon {
+		@apply shrink-0;
+	}
+
+	.app-card-body {
+		@apply min-w-0 flex-1;
+	}
+
+	.app-card-meta {
+		@apply flex flex-wrap items-center gap-x-3 gap-y-2;
+	}
+
+	.app-card-title {
+		@apply font-display text-xl font-semibold tracking-tight text-ink sm:text-[1.35rem];
+	}
+
+	.app-card-tagline {
+		@apply mt-2 text-[15px] font-medium text-ink;
+	}
+
+	.app-card-description {
+		@apply mt-1.5 text-[15px] leading-relaxed text-muted;
+	}
+
+	.app-card-arrow {
+		@apply hidden shrink-0 text-muted transition duration-300 group-hover:translate-x-0.5 group-hover:text-accent sm:flex sm:items-center sm:self-center;
+	}
+
+	.card-span-2 {
+		@apply sm:col-span-2;
+	}
+
+	.card-span-3 {
+		@apply lg:col-span-3;
+	}
+
+	.bento-grid {
+		@apply mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3;
+	}
+
+	.nav-link {
+		@apply rounded-full px-3 py-1.5 text-sm text-muted transition hover:bg-soft hover:text-ink;
+	}
+
+	.nav-link-active {
+		@apply bg-soft font-medium text-ink;
+	}
+
+	.footer-link {
+		@apply text-muted transition hover:text-ink;
+	}
+
+	.text-link {
+		@apply font-medium text-accent transition hover:underline;
+	}
+
+	.list-item {
+		@apply flex gap-3 rounded-[1.1rem] border border-line bg-surface px-5 py-4 text-[15px] leading-relaxed text-muted;
+	}
+
+	.list-item-dot {
+		@apply mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-spend;
+	}
+
+	.prose-legal {
+		@apply prose prose-neutral max-w-none prose-headings:font-display prose-headings:tracking-[-0.02em] prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-table:text-sm prose-th:font-medium;
+	}
+}
+
+@keyframes fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(1rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.animate-fade-up {
+	animation: fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+	animation: fade-in 0.6s ease both;
+}
+
+.delay-1 {
+	animation-delay: 0.1s;
+}
+.delay-2 {
+	animation-delay: 0.2s;
+}
+.delay-3 {
+	animation-delay: 0.3s;
+}
+.delay-4 {
+	animation-delay: 0.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.animate-fade-up,
+	.animate-fade-in {
+		animation: none !important;
+	}
+
+	.card-interactive {
+		transform: none !important;
+	}
+
+	.app-card {
+		transform: none !important;
+	}
+}
