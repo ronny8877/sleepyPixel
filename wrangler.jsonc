@@ -14,5 +14,12 @@
 	"vars": {
 		"SUPABASE_URL": "https://alnfwznmmtcerwqhczdi.supabase.co",
 		"SITE_URL": "https://sleepypixel.dev"
-	}
+	},
+	"kv_namespaces": [
+		{
+			"binding": "DELETE_TOKENS",
+			"id": "2e8892d07c9041ad8c05ad0baf5c80cd",
+			"preview_id": "b8faa5f46431497e8824dda967ab401d"
+		}
+	]
 }

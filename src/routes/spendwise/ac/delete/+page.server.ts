@@ -1,124 +1,95 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
+import { clientIp, checkRateLimit } from '$lib/delete/rate-limit';
+import { createDeleteToken, storeDeleteToken } from '$lib/delete/token';
+import { sendDeleteConfirmationEmail } from '$lib/email/resend';
 import {
 	createAdminClient,
-	createRouteSupabaseClient,
-	getSupabaseConfig,
-	spendwiseAuthCallbackUrl
+	findUserByEmail,
+	getSiteUrl,
+	getSupabaseConfig
 } from '$lib/supabase/server';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ cookies, platform, url }) => {
+export const load: PageServerLoad = async ({ platform }) => {
 	const config = getSupabaseConfig(platform);
-	if (!config) {
-		return { configured: false as const, email: null, authError: null };
-	}
-
-	const authError =
-		url.searchParams.get('error') === 'auth'
-			? 'Google sign-in failed. Please try again.'
-			: url.searchParams.get('error') === 'no_account'
-				? 'No SpendWise account was found for that Google sign-in.'
-				: null;
-
-	const supabase = createRouteSupabaseClient(cookies, config);
-	const {
-		data: { user },
-		error
-	} = await supabase.auth.getUser();
-
-	if (error || !user?.email) {
-		return { configured: true as const, email: null, authError };
-	}
-
-	return { configured: true as const, email: user.email, authError: null };
+	return {
+		configured: Boolean(config)
+	};
 };
 
 export const actions: Actions = {
-	google: async ({ cookies, platform, url }) => {
+	request: async ({ request, platform, url }) => {
 		const config = getSupabaseConfig(platform);
 		if (!config) {
-			return fail(503, { authError: 'Account deletion is not configured.' });
-		}
-
-		const redirectTo = spendwiseAuthCallbackUrl(url.origin, platform);
-		const supabase = createRouteSupabaseClient(cookies, config);
-		const { data, error } = await supabase.auth.signInWithOAuth({
-			provider: 'google',
-			options: {
-				redirectTo,
-				skipBrowserRedirect: true
-			}
-		});
-
-		if (import.meta.env.DEV) {
-			console.info('[spendwise/delete] Starting Google OAuth', { redirectTo });
-		}
-
-		if (error || !data.url) {
-			console.error('[spendwise/delete] Google OAuth start failed', error);
-			return fail(500, { authError: 'Could not start Google sign-in. Please try again.' });
-		}
-
-		redirect(303, data.url);
-	},
-
-	logout: async ({ cookies, platform }) => {
-		const config = getSupabaseConfig(platform);
-		if (config) {
-			const supabase = createRouteSupabaseClient(cookies, config);
-			await supabase.auth.signOut();
-		}
-
-		redirect(303, '/spendwise/ac/delete');
-	},
-
-	delete: async ({ request, cookies, platform }) => {
-		const config = getSupabaseConfig(platform);
-		if (!config) {
-			return fail(503, { deleteError: 'Account deletion is not configured.' });
-		}
-
-		const supabase = createRouteSupabaseClient(cookies, config);
-		const {
-			data: { user },
-			error: userError
-		} = await supabase.auth.getUser();
-
-		if (userError || !user) {
-			return fail(401, {
-				deleteError: 'You must be signed in to delete your account.'
-			});
+			return fail(503, { requestError: 'Account deletion is not configured.' });
 		}
 
 		const form = await request.formData();
-		const confirmEmail = String(form.get('confirmEmail') ?? '').trim().toLowerCase();
-		const confirmed = form.get('confirm') === 'on';
+		const email = String(form.get('email') ?? '').trim().toLowerCase();
 
-		if (!confirmed) {
-			return fail(400, {
-				deleteError: 'Please confirm that you understand this action is permanent.'
+		if (!email || !email.includes('@')) {
+			return fail(400, { requestError: 'Please enter a valid email address.' });
+		}
+
+		const ip = clientIp(request);
+		const ipAllowed = await checkRateLimit(platform, {
+			key: `ip:${ip}`,
+			limit: 10
+		});
+		const emailAllowed = await checkRateLimit(platform, {
+			key: `email:${email}`,
+			limit: 3
+		});
+
+		if (!ipAllowed || !emailAllowed) {
+			return fail(429, {
+				requestError: 'Too many requests. Please wait an hour and try again.'
 			});
-		}
-
-		if (!confirmEmail) {
-			return fail(400, { deleteError: 'Please confirm your email address.' });
-		}
-
-		if (user.email?.toLowerCase() !== confirmEmail) {
-			return fail(400, { deleteError: 'The email you entered does not match your account.' });
 		}
 
 		const admin = createAdminClient(config);
-		const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
+		let user;
 
-		if (deleteError) {
-			console.error('Failed to delete Supabase user', deleteError);
+		try {
+			user = await findUserByEmail(admin, email);
+		} catch (error) {
+			console.error('[spendwise/delete] Failed to look up user', error);
 			return fail(500, {
-				deleteError: 'We could not delete your account. Please contact support@sleepypixel.dev.'
+				requestError: 'We could not process your request. Please try again later.'
 			});
 		}
 
-		await supabase.auth.signOut();
-		redirect(303, '/spendwise/ac/delete?deleted=1');
+		if (!user?.email || !user.id) {
+			return fail(404, {
+				requestError: 'No SpendWise account was found for that email address.'
+			});
+		}
+
+		const hash = createDeleteToken();
+		await storeDeleteToken(platform, hash, {
+			email: user.email.toLowerCase(),
+			userId: user.id,
+			createdAt: Date.now()
+		});
+
+		const confirmUrl = `${getSiteUrl(url.origin, platform)}/spendwise/ac/delete/confirm?hash=${hash}`;
+
+		try {
+			await sendDeleteConfirmationEmail({
+				to: user.email,
+				confirmUrl,
+				platform
+			});
+		} catch (error) {
+			console.error('[spendwise/delete] Failed to send confirmation email', error);
+			return fail(500, {
+				requestError: 'We could not send the confirmation email. Please try again later.'
+			});
+		}
+
+		return {
+			sent: true as const,
+			email: user.email
+		};
 	}
 };
